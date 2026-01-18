@@ -1,23 +1,19 @@
-// DOMS ELEMENTS  ---------------------------------------------------------
-const dom_start = document.getElementById("start");
-const dom_quiz = document.getElementById("quiz");
-const dom_question = document.getElementById("question");
-const dom_choiceA = document.getElementById("A");
-const dom_choiceB = document.getElementById("B");
-const dom_choiceC = document.getElementById("C");
-const dom_choiceD = document.getElementById("D");
+const startBtn = document.getElementById("start");
+const quizBox = document.getElementById("quiz");
+const questionText = document.getElementById("question");
 
-const dom_score = document.getElementById("score");
-const dom_score_p = document.getElementById("score_p");
-const dom_score_img = document.getElementById("score_img");
+const optionA = document.getElementById("A");
+const optionB = document.getElementById("B");
+const optionC = document.getElementById("C");
+const optionD = document.getElementById("D");
 
-// progress bar code ------
-const progress_bar = document.getElementById("progress");
+const resultBox = document.getElementById("score");
+const resultText = document.getElementById("score_p");
+const resultImg = document.getElementById("score_img");
 
-// end progress bar code ------
+const bar = document.getElementById("progress");
 
-// DATA  ---------------------------------------------------------
-let questions = [
+let quizList = [
   {
     title: "What does HTML stand for?",
     choiceA: "Hi Thierry More Laught",
@@ -43,110 +39,87 @@ let questions = [
     correct: "C",
   },
 ];
-let score = 0;
-let currentQuestionIndex = 0;
 
-// FUNCTION  ---------------------------------------------------------
+let point = 0;
+let step = 0;
 
-function loadQuestions() {
-  let storedQuestion = JSON.parse(localStorage.getItem("questions"));
-  if (storedQuestion !== null) {
-    questions = storedQuestion;
-  }
+function fetchQuestions() {
+  const saved = JSON.parse(localStorage.getItem("questions"));
+  if (saved) quizList = saved;
 }
 
-
-// Hide a given element
-// @param  { element }  the DOM element to hide
-function hide(element) {
-  element.style.display = "none";
+function hideEl(el) {
+  el.style.display = "none";
 }
 
-// Show a given element
-// @param  { element }  the DOM element to show
-function show(element) {
-  element.style.display = "block";
+function showEl(el) {
+  el.style.display = "block";
 }
 
-function renderQuestion() {
-  let question = questions[currentQuestionIndex];
-
-  dom_question.textContent = question.title;
-  dom_choiceA.textContent = question.choiceA;
-  dom_choiceB.textContent = question.choiceB;
-  dom_choiceC.textContent = question.choiceC;
-  dom_choiceD.textContent = question.choiceD;
+function drawQuestion() {
+  const q = quizList[step];
+  questionText.textContent = q.title;
+  optionA.textContent = q.choiceA;
+  optionB.textContent = q.choiceB;
+  optionC.textContent = q.choiceC;
+  optionD.textContent = q.choiceD;
 }
 
-dom_start.addEventListener("click", (event) => {
-  hide(dom_start);
-  show(dom_quiz);
+function updateStep(index) {
+  step = index;
+  const percent = (100 * (step + 1)) / quizList.length;
+  bar.style.width = percent + "%";
+}
 
-  // 1 - load the questions from local storage
-  loadQuestions();
-
-  // 2- Reet the question index to 0
-  setCurrentQuestionIndex(0);
-
-  // 2 - Render the first question
-  renderQuestion();
+startBtn.addEventListener("click", () => {
+  hideEl(startBtn);
+  showEl(quizBox);
+  fetchQuestions();
+  point = 0;
+  updateStep(0);
+  drawQuestion();
 });
 
-function setCurrentQuestionIndex(newIndex) {
-  // Set new index
-  currentQuestionIndex = newIndex;
-
-  // Update progres bar
-  progress = (100 * (currentQuestionIndex + 1)) / questions.length;
-  progress_bar.style.width = progress + "%";
-}
-
-function checkAnswer(choice) {
-  let question = questions[currentQuestionIndex];
-  if (choice === question.correct) {
-    score += 1;
+function checkAnswer(selected) {
+  const q = quizList[step];
+  if (selected === q.correct) {
+    point++;
   }
 
-  if (currentQuestionIndex < questions.length - 1) {
-    // Go to the next question
-    setCurrentQuestionIndex(currentQuestionIndex + 1);
-
-    // Render the next quesiton
-    renderQuestion();
+  if (step < quizList.length - 1) {
+    updateStep(step + 1);
+    drawQuestion();
   } else {
-    // display score
-    showScore();
+    showResult();
   }
 }
 
-function showScore() {
-  hide(dom_quiz);
-  show(dom_score);
+function showResult() {
+  hideEl(quizBox);
+  showEl(resultBox);
 
-  // calculate the amount of question percent answered by the user
-  const scorePerCent = Math.round((100 * score) / questions.length);
+  const percent = Math.round((100 * point) / quizList.length);
 
-  // choose the image based on the scorePerCent
-  let comment = "";
-  let image = "../../img/";
+  let text = "";
+  let imgPath = "../../img/";
 
-  if (scorePerCent <= 20) {
-    comment = "HUMM !";
-    image += "20.png";
-  } else if (scorePerCent <= 40) {
-    comment = "YOU CAN IMPROVE !";
-    image += "40.png";
-  } else if (scorePerCent <= 60) {
-    comment = "NOT BAD BUT... !";
-    image += "60.png";
-  } else if (scorePerCent <= 80) {
-    comment = " GOOD !";
-    image += "80.png";
+  if (percent <= 20) {
+    text = "HUMM !";
+    imgPath += "20.png";
+  } else if (percent <= 40) {
+    text = "YOU CAN IMPROVE !";
+    imgPath += "40.png";
+  } else if (percent <= 60) {
+    text = "NOT BAD BUT... !";
+    imgPath += "60.png";
+  } else if (percent <= 80) {
+    text = "GOOD !";
+    imgPath += "80.png";
   } else {
-    comment = "CRAZY AMAZING !";
-    image += "100.png";
+    text = "CRAZY AMAZING !";
+    imgPath += "100.png";
   }
 
-  dom_score_p.textContent = comment + " : " + scorePerCent + " %";
-  dom_score_img.src = image;
+  resultText.textContent = text + " : " + percent + " %";
+  resultImg.src = imgPath;
 }

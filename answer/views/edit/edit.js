@@ -1,10 +1,8 @@
-// DOMS ELEMENTS  ---------------------------------------------------------
-const dom_questions_view = document.getElementById("questions-view");
-const dom_questions_dialog = document.getElementById("questions-dialog");
-const dom_createEditButton = document.getElementById("createEditButton");
+const viewBox = document.getElementById("questions-view");
+const modalBox = document.getElementById("questions-dialog");
+const submitBtn = document.getElementById("createEditButton");
 
-// DATA  ---------------------------------------------------------
-let questions = [
+let quizData = [
   {
     title: "What does HTML stand for?",
     choiceA: "Hi Thierry More Laught",
@@ -31,145 +29,116 @@ let questions = [
   },
 ];
 
-let questionToEdit = null;
+let editingIndex = null;
 
-// HIDE / SHOW ---------------------------------------------------------
-function hide(element) {
-  element.style.display = "none";
+function hideBox(el) {
+  el.style.display = "none";
 }
 
-function show(element) {
-  element.style.display = "block";
+function showBox(el) {
+  el.style.display = "block";
 }
 
-//  LOCAL STORAGE ---------------------------------------------------------
-function saveQuestions() {
-  localStorage.setItem("questions", JSON.stringify(questions));
+function storeData() {
+  localStorage.setItem("questions", JSON.stringify(quizData));
 }
 
-function loadQuestions() {
-  let questionsStorage = JSON.parse(localStorage.getItem("questions"));
-  if (questionsStorage !== null) {
-    questions = questionsStorage;
-  }
+function readData() {
+  const saved = JSON.parse(localStorage.getItem("questions"));
+  if (saved) quizData = saved;
 }
 
-//  EDIT ---------------------------------------------------------
+function drawQuestions() {
+  let container = document.getElementById("questions-container");
+  container.remove();
 
-function renderQuestions() {
-  // Remove the card container and create a new one
-  dom_questions_container = document.getElementById("questions-container");
-  dom_questions_container.remove();
-  dom_questions_container = document.createElement("div");
-  dom_questions_container.id = "questions-container";
-  dom_questions_view.appendChild(dom_questions_container);
+  container = document.createElement("div");
+  container.id = "questions-container";
+  viewBox.appendChild(container);
 
-  // 2 - For all questions,  create a new div (class : item), and append it the container
-  for (let index = 0; index < questions.length; index++) {
-    let question = questions[index];
-
-    let card = document.createElement("div");
+  quizData.forEach((q, i) => {
+    const card = document.createElement("div");
     card.className = "card";
-    card.dataset.index = index;
-    dom_questions_container.appendChild(card);
+    card.dataset.index = i;
+    container.appendChild(card);
 
-    let questionInfos = document.createElement("div");
-    questionInfos.className = "question-info";
-    card.appendChild(questionInfos);
+    const info = document.createElement("div");
+    info.className = "question-info";
+    card.appendChild(info);
 
-    let title = document.createElement("spam");
+    const title = document.createElement("span");
     title.className = "title";
-    title.textContent = question.title;
-    questionInfos.appendChild(title);
+    title.textContent = q.title;
+    info.appendChild(title);
 
-    // Create spams for title and author
-    let actions = document.createElement("div");
+    const actions = document.createElement("div");
     actions.className = "actions";
     card.appendChild(actions);
 
-    let editAction = document.createElement("img");
-    editAction.src = "../../img/edit.svg";
-    editAction.addEventListener("click", editQuestion);
-    actions.appendChild(editAction);
+    const editIcon = document.createElement("img");
+    editIcon.src = "../../img/edit.svg";
+    editIcon.onclick = onEdit;
+    actions.appendChild(editIcon);
 
-    let trashAction = document.createElement("img");
-    trashAction.src = "../../img/trash.png";
-    trashAction.addEventListener("click", removeQuestion);
-    actions.appendChild(trashAction);
-  }
+    const deleteIcon = document.createElement("img");
+    deleteIcon.src = "../../img/trash.png";
+    deleteIcon.onclick = onDelete;
+    actions.appendChild(deleteIcon);
+  });
 }
 
-function editQuestion(event) {
-  //  Get the question index
-  questionToEdit = event.target.parentElement.parentElement.dataset.index;
+function onEdit(e) {
+  editingIndex = e.target.closest(".card").dataset.index;
+  const q = quizData[editingIndex];
 
-  // update the dialog with question informatin
-  let question = questions[questionToEdit];
-  document.getElementById("title").value = question.title;
-  document.getElementById("choiceA").value = question.choiceA;
-  document.getElementById("choiceB").value = question.choiceB;
-  document.getElementById("choiceC").value = question.choiceC;
-  document.getElementById("choiceD").value = question.choiceD;
+  document.getElementById("title").value = q.title;
+  document.getElementById("choiceA").value = q.choiceA;
+  document.getElementById("choiceB").value = q.choiceB;
+  document.getElementById("choiceC").value = q.choiceC;
+  document.getElementById("choiceD").value = q.choiceD;
 
-  // Show the dialog
-  dom_createEditButton.textContent = "EDIT";
-  show(dom_questions_dialog);
+  submitBtn.textContent = "EDIT";
+  showBox(modalBox);
 }
 
-function removeQuestion(event) {
-  //  Get index
-  let index = event.target.parentElement.parentElement.dataset.index;
-
-  // Remove question
-  questions.splice(index, 1);
-
-  // Save to local storage
-  saveQuestions();
-
-  // Update the view
-  renderQuestions();
+function onDelete(e) {
+  const index = e.target.closest(".card").dataset.index;
+  quizData.splice(index, 1);
+  storeData();
+  drawQuestions();
 }
 
 function onAddQuestion() {
-  show(dom_questions_dialog);
+  editingIndex = null;
+  submitBtn.textContent = "CREATE";
+  showBox(modalBox);
 }
 
-function onCancel(e) {
-  dom_createEditButton.textContent = "CREATE";
-  hide(dom_questions_dialog);
+function onCancel() {
+  hideBox(modalBox);
 }
 
 function onCreate() {
-  hide(dom_questions_dialog);
+  const obj = {
+    title: document.getElementById("title").value,
+    choiceA: document.getElementById("choiceA").value,
+    choiceB: document.getElementById("choiceB").value,
+    choiceC: document.getElementById("choiceC").value,
+    choiceD: document.getElementById("choiceD").value,
+    correct: "A",
+  };
 
-  if (questionToEdit !== null) {
-    let editQuestion = questions[questionToEdit];
-    editQuestion.title = document.getElementById("title").value;
-    editQuestion.correct = "A";
-    editQuestion.choiceA = document.getElementById("choiceA").value;
-    editQuestion.choiceB = document.getElementById("choiceB").value;
-    editQuestion.choiceC = document.getElementById("choiceC").value;
-    editQuestion.choiceD = document.getElementById("choiceD").value;
+  if (editingIndex !== null) {
+    quizData[editingIndex] = obj;
   } else {
-    let newQuestion = {};
-    newQuestion.title = document.getElementById("title").value;
-    newQuestion.correct = "A";
-    newQuestion.choiceA = document.getElementById("choiceA").value;
-    newQuestion.choiceB = document.getElementById("choiceB").value;
-    newQuestion.choiceC = document.getElementById("choiceC").value;
-    newQuestion.choiceD = document.getElementById("choiceD").value;
-    questions.push(newQuestion);
+    quizData.push(obj);
   }
 
-  // 2- Save question
-  saveQuestions();
-
-  // 3 - Update the view
-  renderQuestions();
+  editingIndex = null;
+  hideBox(modalBox);
+  storeData();
+  drawQuestions();
 }
 
-// MAIN  ---------------------------------------------------------
-
-loadQuestions();
-
-renderQuestions();
+readData();
+drawQuestions();
